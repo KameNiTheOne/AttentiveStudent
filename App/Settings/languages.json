@@ -1,0 +1,7 @@
+﻿// Languages recognized by the app. 
+// Pattern: "3LetterISO": "lower case language name, like 'english'".
+// See https://huggingface.co/openai/whisper-large-v3 for all supported languages."
+{
+  "rus": "russian",
+  "eng": "english"
+}
