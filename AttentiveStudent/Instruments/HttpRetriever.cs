@@ -25,7 +25,7 @@ namespace CaptureService.Instruments
             byte[] fileToBytes = File.ReadAllBytes(filePath);
             var content = new ByteArrayContent(fileToBytes);
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("audio/mp3");
+            content.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");
             multipartFormContent.Add(content, name: "audiofile", fileName: fileName);
 
             return multipartFormContent;

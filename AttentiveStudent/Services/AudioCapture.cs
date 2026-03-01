@@ -34,6 +34,7 @@ namespace CaptureService.Services
             var capture = new WasapiLoopbackCapture(device);
             // optionally we can set the capture waveformat here: e.g. capture.WaveFormat = new WaveFormat(44100, 16,2);
             var writer = new WaveFileWriter(outputTempPath, capture.WaveFormat);
+            int elapsedTime = 0;
 
             capture.DataAvailable += (s, a) =>
             {
@@ -47,10 +48,12 @@ namespace CaptureService.Services
 
             capture.RecordingStopped += (s, a) =>
             {
+                elapsedTime = (int)Math.Ceiling((double)writer.Position / capture.WaveFormat.AverageBytesPerSecond);
                 writer.Dispose();
                 writer = null;
                 capture.Dispose();
             };
+
             //Record a file number i
             var watch = Stopwatch.StartNew();
             capture.StartRecording();
@@ -62,7 +65,7 @@ namespace CaptureService.Services
                 }
                 await Task.Delay(50);
             }
-            return (int)Math.Ceiling((double)watch.ElapsedMilliseconds/1000);
+            return elapsedTime;
         }
         public void Dispose()
         {

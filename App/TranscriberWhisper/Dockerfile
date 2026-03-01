@@ -12,9 +12,9 @@ COPY ./app /code/app
 # Create and set up the program environment
 RUN conda install --quiet --freeze-installed -c main conda-pack && \
     conda create -n program python=3.11 && \
-    conda run -n program pip install --no-cache-dir numpy==2.* torch==2.8.* torchaudio==2.8.* transformers==4.57.* pyannote.audio==4.0 torchcodec==0.7 hydra-core==1.3.* omegaconf==2.3.* sentencepiece tqdm && \
+    conda run -n program pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     conda run -n program conda install conda-forge::fastapi && \
-    conda run -n program pip install --force-reinstall numpy && \
+    conda run -n program pip install --no-cache-dir transformers accelerate && \
     conda run -n program conda install ffmpeg -c conda-forge
 
 # Use conda run to execute uvicorn in the program environment

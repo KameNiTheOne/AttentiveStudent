@@ -33,6 +33,7 @@ class Program
         catch
         {
             Console.WriteLine(localization.Items["configError"]);
+            Console.ReadLine();
             return;
         }
         if (!Directory.Exists(Path.Combine(pathToExeFolder, "Transcriber", "whisper-small")))
@@ -135,7 +136,7 @@ class Program
         await AsyncDomain[1];
         AsyncDomain[1] = transcriber.TranscribeMultiple(arrangedAudiofiles, lastFileDuration, interruptCts.Token);
 
-        _ = NotifyWhenTaskDone(AsyncDomain[1]);
+        Task notify = NotifyWhenTaskDone(AsyncDomain[1]);
 
         //UI loop for cancelling transcription
         ChangeAndWriteLineDisplayed($"{localization.Items["transcriptMenu"]}");
@@ -153,16 +154,16 @@ class Program
             }
             await Task.Delay(20);
         }
-        string transcribed = await (Task<string>)AsyncDomain[1];
+        await notify;
 
-        Console.WriteLine(await gpt.Query($"{localization.Items["gptPrompt"]} {transcribed}", interruptCts.Token));
+        string transcribed = await (Task<string>)AsyncDomain[1];
 
         if (sendToGPT)
         {
             string query = $"{localization.Items["gptPrompt"]} {transcribed}";
             Task<string> gptTask = gpt.Query(query, interruptCts.Token);
 
-            _ = NotifyWhenTaskDone(gptTask);
+            notify = NotifyWhenTaskDone(gptTask);
 
             //UI loop for cancelling gpt query
             ChangeAndWriteLineDisplayed($"{localization.Items["gptMenu"]}");
@@ -180,6 +181,7 @@ class Program
                 }
                 await Task.Delay(20);
             }
+            await notify;
 
             if (!gptTask.IsCompletedSuccessfully)
             {
@@ -219,6 +221,10 @@ class Program
 
         captureBackend.Dispose();
         noteTaker.Dispose();
+
+        toDisplay += $"\n\n{localization.Items["notificationText"]}";
+        WriteLineDisplayed();
+        Console.ReadLine();
     }
     static void ChangeAndWriteLineDisplayed(string str)
     {
