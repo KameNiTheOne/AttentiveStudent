@@ -6,6 +6,12 @@ Prompts can be found in a language file in the Settings folder.
 
 The general multilingual version of the program will be able to support up to 52 languages due to use of Qwen3-ASR-0.6b
 
+## Usage
+
+Launch the app, enable notes (or not), press dedicated button to answer a recorded question (or do whatever with text retrieved from audio, based on prompts).
+
+Exit the app when you are done. (by pressing the dedicated button!!)
+
 ## Pipeline
 
 <img width="791" height="501" alt="flowchart" src="https://github.com/user-attachments/assets/fba0e68e-c086-4e89-a0f2-0afa5a502dc2" />
