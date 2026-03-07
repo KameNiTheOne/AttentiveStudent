@@ -30,19 +30,16 @@ namespace CaptureService.Services
             instance.port = await instance.InitializeContainer(Path.Combine(instance.pathToExeFolder, "Transcriber"));
             return instance;
         }
-        public async Task<string> Transcribe(string pathToFile, CancellationToken ct)
+        public async Task<string> Transcribe(string pathToTempFile, CancellationToken ct)
         {
-            string noteTempPath = Path.Combine(pathToExeFolder, "notedTemp.wav");
-            File.Copy(pathToFile, noteTempPath);
-
-            string postResult = await http.PostAudiofileAsync($"http://localhost:{port}", noteTempPath, audiofileDuration, ct);
-            File.Delete(noteTempPath);
+            string postResult = await http.PostAudiofileAsync($"http://localhost:{port}", pathToTempFile, audiofileDuration, ct);
+            File.Delete(pathToTempFile);
             return DeserializeTranscribed(postResult).Value;
         }
         public async Task<string> TranscribeMultiple(string[] audiofilesPaths, int lastFileDuration, CancellationToken ct)
         {
             int filesAmount = audiofilesPaths.Length;
-            Console.WriteLine(filesAmount);
+
             (string, int)[] audiofiles = new (string, int)[filesAmount];
             for (int i = 0; i < filesAmount; ++i)
             {
