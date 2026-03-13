@@ -51,10 +51,11 @@ namespace CaptureService
                 for (int i = 0; i < audiofilesAmount; i++)
                 {
                     string outputTempPath = getAudiofilePath(i, true);
-                    capturedPaths[i] = outputTempPath;
+                    string outputPath = getAudiofilePath(i);
 
                     int duration = await audioCapture.Capture(outputTempPath, ct);
-                    await handleDeletingTemp(outputTempPath, getAudiofilePath(i));
+                    await handleDeletingTemp(outputTempPath, outputPath);
+                    capturedPaths[i] = outputPath;
 
                     if (ct.IsCancellationRequested)
                     {
@@ -121,7 +122,7 @@ namespace CaptureService
         {
             int amount = capturedPaths.Count;
             string[] result = new string[amount];
-            int pos = transcriptionStartPos + 1;
+            int pos = amount == audiofilesAmount ? transcriptionStartPos + 1 : 0;
             for (int i = 0; i < amount; ++i)
             {
                 if (pos == audiofilesAmount)
