@@ -16,7 +16,7 @@ Exit the app when you are done. (by pressing the dedicated button!!)
 
 ## Pipeline
 
-<img width="791" height="501" alt="attentivestudent" src="https://github.com/user-attachments/assets/99f12916-e710-413a-93e1-789ed32c310b" />
+<img width="791" height="501" alt="attentivestudent" src="https://github.com/user-attachments/assets/0b5c3be6-6005-4b1d-9465-538467cd33d0" />
 
 ## Installation guide
 
