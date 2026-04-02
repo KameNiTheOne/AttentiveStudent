@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AttentiveStudent\CaptureService.csproj" />
+    <ProjectReference Include="..\Config\Config.csproj" />
     <ProjectReference Include="..\GPTService\GPTService.csproj" />
   </ItemGroup>
 

@@ -5,7 +5,7 @@ namespace GPTService
 {
     public class AzureGPT : IGPT
     {
-        AzureGPTSettings? settings;
+        AzureGPTSettings settings;
 
         ChatCompletionsClient client;
         public AzureGPT(AzureGPTSettings _settings)
@@ -42,6 +42,16 @@ namespace GPTService
             {
                 return "";
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                await Task.Delay(3000);
+                return "";
+            }
+        }
+        ~AzureGPT()
+        {
+            settings.Dispose().Wait();
         }
     }
 }

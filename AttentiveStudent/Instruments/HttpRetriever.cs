@@ -19,7 +19,7 @@ namespace CaptureService.Instruments
         {
             client = new HttpClient() { Timeout = TimeSpan.FromSeconds(600) };
         }
-        MultipartFormDataContent prepareMultipartFormContent(string filePath, string fileName)
+        MultipartFormDataContent PrepareMultipartFormContent(string filePath, string fileName)
         {
             var multipartFormContent = new MultipartFormDataContent();
             byte[] fileToBytes = File.ReadAllBytes(filePath);
@@ -30,7 +30,7 @@ namespace CaptureService.Instruments
 
             return multipartFormContent;
         }
-        async Task postDuration(string http, int amount, CancellationToken ct)
+        async Task PostDuration(string http, int amount, CancellationToken ct)
         {
             using var jsonContent = new StringContent(JsonConvert.SerializeObject(new Duration(amount)));
             jsonContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -44,9 +44,9 @@ namespace CaptureService.Instruments
         }
         public async Task<string> PostAudiofileAsync(string http, string filePath, int duration, CancellationToken ct)
         {
-            await postDuration(http, duration, ct);
+            await PostDuration(http, duration, ct);
 
-            using var multipartFormContent = prepareMultipartFormContent(filePath, "audio.mp3");
+            using var multipartFormContent = PrepareMultipartFormContent(filePath, "audio.mp3");
 
             string result;
             try

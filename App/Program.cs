@@ -1,6 +1,6 @@
-﻿using CaptureService;
+﻿using ConfigDomain;
+using CaptureService;
 using GPTService;
-using AttentiveStudent;
 class Program
 {
     static Localization localization;
@@ -11,26 +11,8 @@ class Program
 
     static async Task Main()
     {
-        //Initialze config
-        string pathToExeFolder = AppDomain.CurrentDomain.BaseDirectory;
-
-        string pathToConfigFolder = Path.Combine(pathToExeFolder, "Settings");
-        string pathToConfig = Path.Combine(pathToConfigFolder, "appsettings.json");
-
-        localization = new Localization(pathToExeFolder);
-        Dictionary<string, string> config;
-        try
-        {
-            config = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToConfig);
-        }
-        catch
-        {
-            Console.WriteLine(localization.Items["configError"]);
-            Console.ReadLine();
-            return;
-        }
-        if (!Directory.Exists(Path.Combine(pathToExeFolder, "Transcriber", "whisper-small")))
-        config["pathToExeFolder"] = pathToExeFolder;
+        Dictionary<string, string> config = Config.Initialize();
+        localization = Config.localization;
 
         Console.WriteLine("Initializing the GPT...");
         GPTBuilder gptBuilder = new(config, localization.Items);
@@ -54,27 +36,46 @@ class Program
             switch (inputedKey)
             {
                 case "D1": //Transcribe and send to GPT
-                    string result = await TranscribeAllAndSendToGPT();
+                    string result = await TranscribeAndSendToGPT();
                     ChangeAndWriteLineDisplayed($"{localization.Items["gptResponseText"]}" +
                         $"\n\n{result}\n\n" +
                         $"{localization.Items["mainMenu"]}");
                     break;
+
                 case "D2": //Enable/Disable note taking mode
                     captureBackend.TakeNotes = !captureBackend.TakeNotes;
                     ChangeAndWriteLineDisplayed($"{localization.Items["takeNotesToggleText"]} " +
                         $"{captureBackend.TakeNotes}.\n\n" +
                         $"{localization.Items["mainMenu"]}");
                     break;
+
                 case "D3": //Help
                     ChangeAndWriteLineDisplayed($"{localization.Items["helpText"]}\n\n" +
                         $"{localization.Items["mainMenu"]}");
                     break;
-                case "D4": //Exit the program
+
+                case "D4": //Run config initialization and then exit the program
+                    Config.Change(out bool restartRequired);
+                    if (restartRequired)
+                    {
+                        ChangeAndWriteLineDisplayed($"{localization.Items["exitText"]}\n");
+                        localization.Items["transcriptMenu"] = $"{localization.Items["exitText"]}\n\n{localization.Items["transcriptMenu"]}";
+                        await ExitProgram();
+                        exit = true;
+                    }
+                    else
+                    {
+                        WriteLineDisplayed();
+                    }
+                    break;
+
+                case "D5": //Exit the program
                     ChangeAndWriteLineDisplayed($"{localization.Items["exitText"]}\n");
                     localization.Items["transcriptMenu"] = $"{localization.Items["exitText"]}\n\n{localization.Items["transcriptMenu"]}";
                     await ExitProgram();
                     exit = true;
                     break;
+
                 default:
                     WriteLineDisplayed();
                     break;
@@ -93,55 +94,20 @@ class Program
             AddToAndWriteLineDisplayed($"\n\n{localization.Items["notificationText"]}");
         }
     }
-    static async Task<string> TranscribeAllAndSendToGPT()
+    static async Task<string> TranscribeAndSendToGPT()
     {
-        CancellationTokenSource interruptCts = new();
-
-        Task<string> transcriptionTask = captureBackend.TranscribeMultiple(true, interruptCts.Token);
-
+        Task<string> transcriptionTask = captureBackend.StopAndTranscribe(true, CancellationToken.None);
         Task notify = NotifyWhenTaskDone(transcriptionTask);
 
-        //UI loop for cancelling transcription
         ChangeAndWriteLineDisplayed($"{localization.Items["transcriptMenu"]}");
-        while (!(interruptCts.IsCancellationRequested || transcriptionTask.IsCompletedSuccessfully))
-        {
-            string inputedKey = Console.ReadKey().Key.ToString();
-            switch (inputedKey)
-            {
-                case "C": //Cancel
-                    interruptCts.Cancel();
-                    break;
-                default:
-                    WriteLineDisplayed();
-                    break;
-            }
-            await Task.Delay(20);
-        }
         await notify;
-
         string transcribed = await transcriptionTask;
 
         string query = $"{localization.Items["gptPrompt"]} {transcribed}";
-        Task<string> gptTask = gpt.Query(query, interruptCts.Token);
-
+        Task<string> gptTask = gpt.Query(query, CancellationToken.None);
         notify = NotifyWhenTaskDone(gptTask);
 
-        //UI loop for cancelling gpt query
         ChangeAndWriteLineDisplayed($"{localization.Items["gptMenu"]}");
-        while (!(interruptCts.IsCancellationRequested || gptTask.IsCompletedSuccessfully))
-        {
-            string inputedKey = Console.ReadKey().Key.ToString();
-            switch (inputedKey)
-            {
-                case "C": //Cancel
-                    interruptCts.Cancel();
-                    break;
-                default:
-                    WriteLineDisplayed();
-                    break;
-            }
-            await Task.Delay(20);
-        }
         await notify;
 
         if (!gptTask.IsCompletedSuccessfully)
@@ -154,11 +120,10 @@ class Program
     {
         if (captureBackend.TakeNotes)
         {
-            string transcribed = await captureBackend.TranscribeMultiple(false, CancellationToken.None);
-            captureBackend.noteTaker.TakeNote(transcribed);
+            string transcribed = await captureBackend.StopAndTranscribe(false, CancellationToken.None);
         }
 
-        captureBackend.Dispose();
+        await captureBackend.Dispose();
 
         AddToAndWriteLineDisplayed(localization.Items["notificationText"]);
         Console.ReadLine();

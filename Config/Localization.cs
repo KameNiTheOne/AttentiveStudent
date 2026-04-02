@@ -1,5 +1,5 @@
 ﻿using System.Globalization;
-namespace Misc
+namespace ConfigDomain
 {
     public class Localization
     {
@@ -10,10 +10,15 @@ namespace Misc
 
             string pathToConfigFolder = Path.Combine(pathToExeFolder, "Settings");
             string pathToLanguages = Path.Combine(pathToConfigFolder, "languages.json");
-            string language = convertLanguageNameFromISOToTranscriber(ISOLanguage, pathToLanguages);
-            Items = getLocalization(pathToConfigFolder, language);
+            string language = ConvertLanguageNameFromISOToTranscriber(ISOLanguage, pathToLanguages);
+            Items = GetLocalization(pathToConfigFolder, language);
+
+            string pathToTranscriberFolder = Path.Combine(pathToExeFolder, "Transcriber");
+            string pathToApp = Path.Combine(pathToTranscriberFolder, "app");
+            string pathToLanguageFile = Path.Combine(pathToApp, "language.txt");
+            CreateTransciberLanguageFile(pathToLanguageFile, language);
         }
-        string convertLanguageNameFromISOToTranscriber(string ISOLanguage, string pathToLanguages)
+        string ConvertLanguageNameFromISOToTranscriber(string ISOLanguage, string pathToLanguages)
         {
             var languages = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLanguages);
             if (languages.TryGetValue(ISOLanguage, out string value))
@@ -22,10 +27,20 @@ namespace Misc
             }
             return "english";
         }
-        Dictionary<string, string> getLocalization(string pathToLocalizationFolder, string language)
+        Dictionary<string, string> GetLocalization(string pathToLocalizationFolder, string language)
         {
             string pathToLocalization = Path.Combine(pathToLocalizationFolder, $"{language}.json");
             return Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLocalization);
+        }
+        void CreateTransciberLanguageFile(string path, string language)
+        {
+            using (var stream = File.Open(path, FileMode.Create))
+            {
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.Write(language);
+                }
+            }
         }
     }
 }

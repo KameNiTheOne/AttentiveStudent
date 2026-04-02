@@ -14,4 +14,8 @@
     <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.25.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ConfigChangeReactor\ConfigChangeReactor.csproj" />
+  </ItemGroup>
+
 </Project>

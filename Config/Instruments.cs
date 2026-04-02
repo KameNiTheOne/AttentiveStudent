@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Misc
+namespace ConfigDomain
 {
     public static class Instruments
     {

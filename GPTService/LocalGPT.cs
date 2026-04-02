@@ -38,13 +38,13 @@ namespace GPTService
             {
                 SamplingPipeline = new DefaultSamplingPipeline() { Temperature = 0.75f },
                 AntiPrompts = new List<string> { "User:", "System:", "User: ", "System: ", "\nUser:", "\nSystem:", "\nUser: ", "\nSystem: " }, // Stop generation once antiprompts appear.
-                MaxTokens = 256 // No more than 256 tokens should appear in answer. Remove it if antiprompt is enough for control.
+                MaxTokens = 512 // No more than 512 tokens should appear in answer. Remove it if antiprompt is enough for control.
             };
         }
         /// <summary>
         /// Removes unnecessary patterns specified in patternToTrim and whitespace characters from start and end of string (if trimWhiteSpace is true).
         /// </summary>
-        string cleanResponse(string response, bool trimWhiteSpace = true)
+        string CleanResponse(string response, bool trimWhiteSpace = true)
         {
             string regexedResponse = Regex.Replace(response, patternToTrim, string.Empty);
             if (trimWhiteSpace)
@@ -74,7 +74,7 @@ namespace GPTService
                 return "";
             }
 
-            return cleanResponse(res);
+            return CleanResponse(res);
         }
     }
 }

@@ -1,10 +1,10 @@
 ﻿using CaptureService.Services;
+using ConfigChangeReactor;
 
 namespace CaptureService
 {
-    public class CaptureBackend : IDisposable
+    public class CaptureBackend : Configurable
     {
-        int audiofilesAmount;
         string outputFolderPath;
         AudioCapture audioCapture;
         Transcriber transcriber;
@@ -12,10 +12,9 @@ namespace CaptureService
 
         Random rnd = new Random();
 
-        Task asyncTranscription = Task.CompletedTask;
-        Task<(int, int)> asyncListening;
+        Task asyncTranscription;
+        Task asyncListening;
 
-        Dictionary<int, string> capturedPaths = new();
         CancellationTokenSource captureCts = new();
         bool captureCtsDisposed = false;
 
@@ -24,10 +23,9 @@ namespace CaptureService
         public static async Task<CaptureBackend> Initialize(Dictionary<string, string> cnfg)
         {
             var instance = new CaptureBackend();
-            instance.audiofilesAmount = int.Parse(cnfg["audiofilesAmount"]);
 
             Console.WriteLine("Initializing the NoteTaker...");
-            instance.noteTaker = new NoteTaker(cnfg["pathToExeFolder"]);
+            instance.noteTaker = new NoteTaker(cnfg);
             Console.WriteLine($"Done initializing the NoteTaker!");
 
             Console.WriteLine("Initializing the transcriber...");
@@ -35,78 +33,68 @@ namespace CaptureService
             Console.WriteLine($"Done initializing the transcriber!");
 
             Console.WriteLine("Initializing AudioCapture...");
-            string ptef = cnfg["pathToExeFolder"];
-            instance.outputFolderPath = Path.Combine(ptef, "Recorded");
-            instance.audioCapture = new AudioCapture(instance.outputFolderPath, cnfg["captureDeviceName"], long.Parse(cnfg["audiofileDuration"]));
+            instance.outputFolderPath = Path.Combine(cnfg["pathToExeFolder"], "Recorded");
+            Directory.CreateDirectory(instance.outputFolderPath);
+            instance.audioCapture = new AudioCapture(cnfg);
             Console.WriteLine("Done initializing AudioCapture!");
 
-            instance.asyncListening = instance.startListening(instance.captureCts.Token);
+            Func<Task<string>> completedStringTask = async () => { await Task.CompletedTask; return ""; };
+            instance.asyncTranscription = completedStringTask();
 
+            instance.asyncListening = instance.StartListeningAsync(instance.captureCts.Token);
+
+            ReactorDomain.Subscribe(instance.ChangeHandler);
             return instance;
         }
-        async Task<(int, int)> startListening(CancellationToken ct)
+        async Task StartListeningAsync(CancellationToken ct)
         {
             while (true)
             {
-                for (int i = 0; i < audiofilesAmount; i++)
+                string audiofilePath = Path.Combine(outputFolderPath, $"{rnd.Next(1_000_000)}.wav");
+                int duration = await audioCapture.Capture(audiofilePath, ct);
+                await HandleDeletingTemp(audiofilePath, duration);
+
+                if (ct.IsCancellationRequested)
                 {
-                    string outputTempPath = getAudiofilePath(i, true);
-                    string outputPath = getAudiofilePath(i);
-
-                    int duration = await audioCapture.Capture(outputTempPath, ct);
-                    await handleDeletingTemp(outputTempPath, outputPath);
-                    capturedPaths[i] = outputPath;
-
-                    if (ct.IsCancellationRequested)
-                    {
-                        return (i, duration);
-                    }
+                    break;
                 }
             }
         }
-        async Task handleDeletingTemp(string outputTempPath, string outputMainPath)
+        async Task HandleDeletingTemp(string outputMainPath, int duration)
         {
             if (File.Exists(outputMainPath))
             {
-                if (TakeNotes)
-                {
-                    string noteTempPath = Path.Combine(outputFolderPath, $"temp{rnd.Next(1_000_000)}.wav");
-                    File.Copy(outputMainPath, noteTempPath);
+                string noteTempPath = Path.Combine(outputFolderPath, $"temp{rnd.Next(1_000_000)}.wav");
+                File.Copy(outputMainPath, noteTempPath);
 
-                    await noteTranscriptionAction(noteTempPath);
-                }
+                await NoteTranscriptionAction(noteTempPath, duration);
+
                 File.Delete(outputMainPath);
             }
-            File.Move(outputTempPath, outputMainPath);
         }
-        async Task noteTranscriptionAction(string outputMainPath)
+        async Task NoteTranscriptionAction(string outputMainPath, int duration)
         {
-            Func<string, Task> Transcribe = async (string AFPath) =>
+            Func<string, int, Task> Transcribe = async (string AFPath, int duration) =>
             {
-                string transcribed = await transcriber.Transcribe(AFPath, CancellationToken.None);
-                noteTaker.TakeNote(transcribed);
+                string transcribed = await transcriber.Transcribe(AFPath, duration, CancellationToken.None);
+                noteTaker.TakeNote(transcribed, TakeNotes);
             };
 
             await asyncTranscription;
-            asyncTranscription = Transcribe(outputMainPath);
+            asyncTranscription = Transcribe(outputMainPath, duration);
         }
-        public async Task<string> TranscribeMultiple(bool continueCapture, CancellationToken ct)
+        public async Task<string> StopAndTranscribe(bool continueCapture, CancellationToken ct)
         {
-            (int, int) transcriptionInfo = await stopListeningAndReturnTranscriptionInfo(continueCapture);
-            int startPos = transcriptionInfo.Item1;
-            int lastFileDuration = transcriptionInfo.Item2;
-            string[] arrangedAudiofiles = arrangeForTranscription(startPos);
-
+            await StopListeningAndReturnTranscriptionDuration(continueCapture);
             await asyncTranscription;
-            asyncTranscription = transcriber.TranscribeMultiple(arrangedAudiofiles, lastFileDuration, ct);
 
-            return await (Task<string>) asyncTranscription;
+            return noteTaker.ReadFromBatch();
         }
-        async Task<(int, int)> stopListeningAndReturnTranscriptionInfo(bool continueCapture)
+        async Task StopListeningAndReturnTranscriptionDuration(bool continueCapture)
         {
             if (TakeNotes) await asyncTranscription;
             captureCts.Cancel();
-            (int, int) info = await asyncListening;
+            await asyncListening;
             captureCts.Dispose();
             captureCtsDisposed = true;
 
@@ -114,38 +102,25 @@ namespace CaptureService
             {
                 captureCtsDisposed = false;
                 captureCts = new CancellationTokenSource();
-                asyncListening = startListening(captureCts.Token);
+                asyncListening = StartListeningAsync(captureCts.Token);
             }
-            return info;
         }
-        string[] arrangeForTranscription(int transcriptionStartPos)
+        public override void ChangeHandler(Dictionary<string, string> cnfg)
         {
-            int amount = capturedPaths.Count;
-            string[] result = new string[amount];
-            int pos = amount == audiofilesAmount ? transcriptionStartPos + 1 : 0;
-            for (int i = 0; i < amount; ++i)
-            {
-                if (pos == audiofilesAmount)
-                {
-                    pos = 0;
-                }
-                result[pos] = getAudiofilePath(pos, false);
-                pos++;
-            }
-            return result;
+            StopListeningAndReturnTranscriptionDuration(true).Wait();
         }
-        string getAudiofilePath(int numberORecording, bool temp = false)
-        {
-            string suffix = temp ? "temp" : "";
-            return Path.Combine(outputFolderPath, $"recorded{numberORecording}{suffix}.wav");
-        }
-        public void Dispose()
+
+        public override async Task Dispose()
         {
             if (!captureCtsDisposed) captureCts.Cancel();
-            Task.WaitAll(asyncTranscription, asyncListening);
+            await asyncListening;
+            await asyncTranscription;
             if (!captureCtsDisposed) captureCts.Dispose();
-            audioCapture.Dispose();
-            noteTaker.Dispose();
+
+            Directory.Delete(outputFolderPath, true);
+            await audioCapture.Dispose();
+            await noteTaker.Dispose();
+            await base.Dispose();
         }
     }
 }

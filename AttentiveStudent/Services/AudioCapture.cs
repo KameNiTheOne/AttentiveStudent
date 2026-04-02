@@ -1,26 +1,24 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System.Diagnostics;
+using ConfigChangeReactor;
 
 namespace CaptureService.Services
 {
-    public class AudioCapture : IDisposable
+    public class AudioCapture : Configurable
     {
         long audiofileDuration;
-        string outputFolder;
+        public string CaptureDeviceName;
         MMDevice device;
-        public AudioCapture(string _outputFolder, string deviceName, long _audiofileDuration)
+        public AudioCapture(Dictionary<string, string> cnfg)
         {
-            audiofileDuration = _audiofileDuration;
+            audiofileDuration = long.Parse(cnfg["audiofileDuration"]);
+            CaptureDeviceName = cnfg["captureDeviceName"];
 
-            outputFolder = _outputFolder;
-            Directory.CreateDirectory(outputFolder);
-
-            bool deviceSetup = false;
             var enumerator = new MMDeviceEnumerator();
             foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
             {
-                if (wasapi.DeviceFriendlyName == deviceName)
+                if (wasapi.DeviceFriendlyName == CaptureDeviceName)
                 {
                     Console.WriteLine($"Capturing on: {wasapi.DeviceFriendlyName}");
                     device = wasapi;
@@ -28,9 +26,11 @@ namespace CaptureService.Services
                 }
             }
 
+            ReactorDomain.Subscribe(ChangeHandler);
         }
         public async Task<int> Capture(string outputTempPath, CancellationToken ct)
         {
+            long afd = audiofileDuration;
             var capture = new WasapiLoopbackCapture(device);
             // optionally we can set the capture waveformat here: e.g. capture.WaveFormat = new WaveFormat(44100, 16,2);
             var writer = new WaveFileWriter(outputTempPath, capture.WaveFormat);
@@ -39,7 +39,7 @@ namespace CaptureService.Services
             capture.DataAvailable += (s, a) =>
             {
                 writer.Write(a.Buffer, 0, a.BytesRecorded);
-                long audioLengthInSeconds = capture.WaveFormat.AverageBytesPerSecond * audiofileDuration;
+                long audioLengthInSeconds = capture.WaveFormat.AverageBytesPerSecond * afd;
                 if (writer.Position > audioLengthInSeconds)
                 {
                     capture.StopRecording();
@@ -67,9 +67,23 @@ namespace CaptureService.Services
             }
             return elapsedTime;
         }
-        public void Dispose()
+        public override void ChangeHandler(Dictionary<string, string> cnfg)
         {
-            Directory.Delete(outputFolder, true);
+            audiofileDuration = long.Parse(cnfg["audiofileDuration"]);
+            if (CaptureDeviceName != cnfg["captureDeviceName"])
+            {
+                CaptureDeviceName = cnfg["captureDeviceName"];
+
+                var enumerator = new MMDeviceEnumerator();
+                foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+                {
+                    if (wasapi.DeviceFriendlyName == CaptureDeviceName)
+                    {
+                        device = wasapi;
+                        break;
+                    }
+                }
+            }
         }
     }
 }

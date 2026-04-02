@@ -1,15 +1,12 @@
 ﻿{
-  //Error messages
-  "configError": "Run Config.exe first!",
-
   //Main UI texts
   "greetingText": "Recording started!",
-  "mainMenu": "Choose what you want to do (enter the corresponding number):\n1: Answer the last question.\n2: Toggle note-taking mode on/off.\n3: Help.\n4: Exit.",
+  "mainMenu": "Choose what you want to do (enter the corresponding number):\n1: Answer the last question.\n2: Toggle note-taking mode on/off.\n3: Help.\n4: Configure.\n5: Exit.",
   "takeNotesToggleText": "Is note-taking enabled?",
-  "helpText": "Help:\n1: Transcribes the last audio and sends it to GPT to answer a question from the audio.\n2: Transcribes all audio and saves the result to the Notes folder in the program's directory.",
+  "helpText": "Help:\n1: Transcribes the last audio and sends it to GPT to answer a question from the audio.\n2: Transcribes all audio and saves the result to the Notes folder in the program's directory.\n4: Changes the program settings.",
   "exitText": "Exiting the program, please wait...",
-  "transcriptMenu": "Transcribing audio, please wait...\nTo cancel this action, press C.",
-  "gptMenu": "Waiting for response from GPT, please wait...\nTo cancel this action, press C.",
+  "transcriptMenu": "Transcribing audio, please wait...",
+  "gptMenu": "Waiting for response from GPT, please wait...",
   "gptResponseText": "GPT Response:",
   "notificationText": "Success! Press any button to continue...",
 
@@ -29,12 +26,17 @@
   "modelText": "Enter the Azure model name (if unsure, use, for example, meta/Llama-3.3-70B-Instruct):",
   "temperatureText": "Enter the model temperature:",
   "mainSetupMenu": "Advanced options, I advise not to change them. Choose what you want to modify:",
-  "currentText": "current value:",
+  "currentText": "Current value:",
   "exitOption": "Exit",
   "gptModeText": "Select GPT mode:",
   "localExplanation": "Local model.",
   "azureExplanation": "Azure model (online access via API)",
   "captureDeviceNameText": "Select the device that will be used for recording:",
   "chooseIntText": "Enter an integer:",
-  "chooseFloatText": "Enter a decimal number using a dot:"
+  "chooseFloatText": "Enter a decimal number using a dot:",
+  "useNotedAmountText": "Enter the number of last said words that are going to be used for generating an answer using GPT:",
+  "cancelText": "Cancel",
+  "cancelMenuText": "Enter c to cancel.",
+  "audiofileDurationText": "",
+  "restartWarnText": "!Changing this option will require a restart!"
 }
