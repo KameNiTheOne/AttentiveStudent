@@ -22,9 +22,8 @@ Exit the app when you are done. (by pressing the dedicated button!!)
 
 1. Install Docker Desktop from https://www.docker.com.
 2. Install continuumio/miniconda3:latest image from docker hub.
-3. Run the app (AttentiveStudent.exe), follow the instructions and then wait for it to finish building the image. Depending on your internet speed it might take more than 30 minutes. After the process is finished you won’t have to repeat it again and it will only a couple seconds to launch the app.
+3. Run the app (AttentiveStudent.exe), follow the instructions and then wait for it to finish building the image. Depending on your internet speed it might take more than 30 minutes. After the setup is finished you won’t have to redo it again and it will only take a couple of seconds to launch the app.
 4. Done!
-
 ## Translation guide
 
 1. Go to Settings folder and open the languages.json file
