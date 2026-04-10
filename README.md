@@ -24,9 +24,16 @@ Exit the app when you are done. (by pressing the dedicated button!!)
 2. Install continuumio/miniconda3:latest image from docker hub.
 3. Run the app (AttentiveStudent.exe), follow the instructions and then wait for it to finish building the image. Depending on your internet speed it might take more than 30 minutes. After the setup is finished you won’t have to redo it again and it will only take a couple of seconds to launch the app.
 4. Done!
+
 ## Translation guide
 
 1. Go to Settings folder and open the languages.json file
 2. Add your language to the file following the instructions present in the file.
 3. Copy and translate russian.json, save it with the same full name you’d written in the languages.json file (eg. “eng”: “english” -> english.json)
 4. Done!
+
+## Models used
+
+ai-sage/GigaAM-v3: https://huggingface.co/ai-sage/GigaAM-v3
+
+openai/whisper-small: https://huggingface.co/openai/whisper-small
