@@ -15,7 +15,7 @@ RUN conda install --quiet --freeze-installed -c main conda-pack && \
     conda run -n program pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     conda run -n program conda install conda-forge::fastapi && \
     conda run -n program pip install --no-cache-dir transformers accelerate && \
-    conda run -n program pip install --no-cache-dir ffmpeg && \
+    conda run -n program conda install -y -c conda-forge "ffmpeg" && \
 	conda run -n program pip install --no-cache-dir transformers[audio]
 
 # Use conda run to execute uvicorn in the program environment
