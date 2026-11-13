@@ -8,7 +8,7 @@ namespace ConfigDomain
 {
     public static class Config
     {
-        public static Localization localization;
+        public static Localization Localization { get; private set; }
 
         static Dictionary<string, string> config;
 
@@ -18,8 +18,6 @@ namespace ConfigDomain
         public static Dictionary<string, string> Initialize()
         {
             string pathToExeFolder = AppDomain.CurrentDomain.BaseDirectory;
-            localization = new Localization(pathToExeFolder);
-
             string pathToConfigFolder = Path.Combine(pathToExeFolder, "Settings");
             pathToConfig = Path.Combine(pathToConfigFolder, "appsettings.json");
 
@@ -27,24 +25,32 @@ namespace ConfigDomain
             {
                 string pathToTemplate = Path.Combine(pathToConfigFolder, "appsettingsTemplate.json");
                 var templateConfig = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToTemplate);
+
+                Localization = new Localization(pathToExeFolder);
+
                 config = InitialSetupMenu(templateConfig);
             }
             else
             {
                 config = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToConfig);
+
+                Localization = new Localization(pathToExeFolder, config["localizationLang"], config["transcriberLang"]);
             }
+            
             config["pathToExeFolder"] = pathToExeFolder;
             SaveConfig();
+
             return config;
         }
         public static Dictionary<string, string> Change(out bool restartRequired)
         {
             MainSetupMenu();
-            SaveConfig();
 
             restartRequired = isRestartRequired;
 
             ReactorDomain.InvokeConfigChange(config);
+
+            SaveConfig();
             return config;
         }
         static void SaveConfig()
@@ -74,30 +80,35 @@ namespace ConfigDomain
             {
                 while (true)
                 {
-                    ChangeAndWriteLineDisplayed(localization.Items["contextSizeText"]);
+                    ChangeAndWriteLineDisplayed(Localization.Items["contextSizeText"]);
                     result["contextSize"] = ChooseInt(out bool vCh).ToString();
                     if (vCh) break;
                 }
+                
                 while (true)
                 {
-                    ChangeAndWriteLineDisplayed(localization.Items["gpuLayerCountText"]);
+                    ChangeAndWriteLineDisplayed(Localization.Items["gpuLayerCountText"]);
                     result["gpuLayerCount"] = ChooseInt(out bool vCh).ToString();
                     if (vCh) break;
                 }
-                ChangeAndWriteLineDisplayed(localization.Items["modelPathText"]);
+                
+                ChangeAndWriteLineDisplayed(Localization.Items["modelPathText"]);
                 result["modelPath"] = Console.ReadLine();
             }
             else
             {
-                ChangeAndWriteLineDisplayed(localization.Items["endpointText"]);
+                ChangeAndWriteLineDisplayed(Localization.Items["endpointText"]);
                 result["endpoint"] = Console.ReadLine();
-                ChangeAndWriteLineDisplayed(localization.Items["apiKeyText"]);
+                
+                ChangeAndWriteLineDisplayed(Localization.Items["apiKeyText"]);
                 result["apiKey"] = Console.ReadLine();
-                ChangeAndWriteLineDisplayed(localization.Items["modelText"]);
+                
+                ChangeAndWriteLineDisplayed(Localization.Items["modelText"]);
                 result["model"] = Console.ReadLine();
+                
                 while (true)
                 {
-                    ChangeAndWriteLineDisplayed(localization.Items["temperatureText"]);
+                    ChangeAndWriteLineDisplayed(Localization.Items["temperatureText"]);
                     result["temperature"] = ChooseFloat(out bool vCh).ToString();
                     if (vCh) break;
                 }
@@ -108,6 +119,9 @@ namespace ConfigDomain
                 if (vCh) break;
             }
 
+            result["localizationLang"] = Localization.Language;
+            result["transcriberLang"] = Localization.TranscriberLanguage;
+
             return result;
         }
         static void MainSetupMenu()
@@ -117,7 +131,7 @@ namespace ConfigDomain
             {
                 List<string> options, keys;
                 (options, keys) = MakeOptions();
-                ChangeAndWriteLineDisplayed(localization.Items["mainSetupMenu"]);
+                ChangeAndWriteLineDisplayed(Localization.Items["mainSetupMenu"]);
 
                 int chosen = ChooseFromList(options);
                 flag = ChangersManager(keys[chosen]);
@@ -136,17 +150,19 @@ namespace ConfigDomain
             {
                 ignore = new() { "contextSize", "gpuLayerCount", "modelPath", "pathToExeFolder" };
             }
+
             foreach (string key in config.Keys)
             {
                 if (ignore.Contains(key))
                 {
                     continue;
                 }
-                result.Add($"{key}\n   {localization.Items["currentText"]} {config[key]}\n");
+                result.Add($"{key}\n   {Localization.Items["currentText"]} {config[key]}\n");
                 keys.Add(key);
             }
-            result.Add(localization.Items["exitOption"]);
+            result.Add(Localization.Items["exitOption"]);
             keys.Add("EXIT");
+
             return (result, keys);
         }
         static bool ChangersManager(string fieldToChange)
@@ -157,133 +173,149 @@ namespace ConfigDomain
                     {
                         ChangeGPTMode(out bool valueChanged, ref config, true);
                         isRestartRequired = valueChanged;
-                        return true;
+                        break;
                     }
                 case "captureDeviceName":
                     {
                         ChangeCaptureDevice(out bool _, ref config);
-                        return true;
+                        break;
                     }
                 case "audiofileDuration":
                     {
-                        ChangerOptionInt("audiofileDuration");
-                        return true;
+                        ChangeOptionInt("audiofileDuration");
+                        break;
                     }
                 case "endpoint":
                     {
-                        ChangerOptionReadLine("endpoint");
-                        return true;
+                        ChangeOptionReadLine("endpoint");
+                        break;
                     }
                 case "apiKey":
                     {
-                        ChangerOptionReadLine("apiKey");
-                        return true;
+                        ChangeOptionReadLine("apiKey");
+                        break;
                     }
                 case "model":
                     {
-                        ChangerOptionReadLine("model");
-                        return true;
+                        ChangeOptionReadLine("model");
+                        break;
                     }
                 case "temperature":
                     {
-                        ChangerOptionFloat("temperature");
-                        return true;
+                        ChangeOptionFloat("temperature");
+                        break;
                     }
                 case "contextSize":
                     {
-                        isRestartRequired = ChangerOptionInt("contextSize", true);
-                        return true;
+                        ChangeOptionInt("contextSize", true);
+                        break;
                     }
                 case "gpuLayerCount":
                     {
-                        isRestartRequired = ChangerOptionInt("gpuLayerCount", true);
-                        return true;
+                        ChangeOptionInt("gpuLayerCount", true);
+                        break;
                     }
                 case "modelPath":
                     {
-                        isRestartRequired = ChangerOptionReadLine("modelPath", true);
-                        return true;
+                        ChangeOptionReadLine("modelPath", true);
+                        break;
                     }
                 case "useNotedAmount":
                     {
-                        ChangerOptionInt("useNotedAmount");
-                        return true;
+                        ChangeOptionInt("useNotedAmount");
+                        break;
+                    }
+                case "localizationLang":
+                    {
+                        ChangeLocalizationLanguage();
+                        break;
+                    }
+                case "transcriberLang":
+                    {
+                        ChangeTranscriberLanguage();
+                        break;
                     }
                 default:
                     {
                         return false;
                     }
             }
+            return true;
         }
-        static bool ChangerOptionFloat(string option, bool restartWarn = false)
+        static void ChangeOptionFloat(string option, bool restartOnChange = false)
         {
-            string toWrite = localization.Items[$"{option}Text"];
-            if (restartWarn)
+            string toWrite = Localization.Items[$"{option}Text"];
+            if (restartOnChange)
             {
-                toWrite += $"\n{localization.Items["restartWarnText"]}";
+                toWrite += $"\n{Localization.Items["restartWarnText"]}";
             }
             ChangeAndWriteLineDisplayed(toWrite);
+            
             string input = ChooseFloat(out bool valueChanged).ToString();
             if (valueChanged)
             {
                 config[option] = input;
+                isRestartRequired = restartOnChange;
             }
-            return valueChanged;
         }
-        static bool ChangerOptionInt(string option, bool restartWarn = false)
+        static void ChangeOptionInt(string option, bool restartOnChange = false)
         {
-            string toWrite = localization.Items[$"{option}Text"];
-            if (restartWarn)
+            string toWrite = Localization.Items[$"{option}Text"];
+            if (restartOnChange)
             {
-                toWrite += $"\n{localization.Items["restartWarnText"]}";
+                toWrite += $"\n{Localization.Items["restartWarnText"]}";
             }
             ChangeAndWriteLineDisplayed(toWrite);
+            
             string input = ChooseInt(out bool valueChanged).ToString();
             if (valueChanged)
             {
                 config[option] = input;
+                isRestartRequired = restartOnChange;
             }
-            return valueChanged;
         }
-        static bool ChangerOptionReadLine(string option, bool restartWarn = false)
+        static void ChangeOptionReadLine(string option, bool restartOnChange = false)
         {
-            string toWrite = $"{localization.Items[$"{option}Text"]}\n{localization.Items["cancelMenuText"]}";
-            if (restartWarn)
+            string toWrite = $"{Localization.Items[$"{option}Text"]}\n{Localization.Items["cancelMenuText"]}";
+            if (restartOnChange)
             {
-                toWrite += $"\n{localization.Items["restartWarnText"]}\n";
+                toWrite += $"\n{Localization.Items["restartWarnText"]}\n";
             }
             ChangeAndWriteLineDisplayed(toWrite);
+            
             string input = Console.ReadLine();
             if (input.ToLower() == "c")
             {
-                return false;
+                return;
             }
+            
             config[option] = input;
-            return true;
+            isRestartRequired = restartOnChange;
         }
         static void ChangeGPTMode(out bool valueChanged, ref Dictionary<string, string> config, bool restartWarn = false)
         {
-            string toWrite = localization.Items["gptModeText"];
+            string toWrite = Localization.Items["gptModeText"];
             if (restartWarn)
             {
-                toWrite += $"\n{localization.Items["restartWarnText"]}\n";
+                toWrite += $"\n{Localization.Items["restartWarnText"]}\n";
             }
             ChangeAndWriteLineDisplayed(toWrite);
 
             string[] gptModes = { "local", "azure", "exit"};
             
-            int chosen = ChooseFromList(new List<string> { localization.Items["localExplanation"], localization.Items["azureExplanation"], localization.Items["cancelText"] });
+            int chosen = ChooseFromList(new List<string> { Localization.Items["localExplanation"], Localization.Items["azureExplanation"], Localization.Items["cancelText"] });
             if (gptModes[chosen] == "exit")
             {
                 valueChanged = false;
                 return;
             }
+            
             valueChanged = true;
             config["gptMode"] = gptModes[chosen];
         }
         static void ChangeCaptureDevice(out bool valueChanged, ref Dictionary<string, string> config)
         {
-            ChangeAndWriteLineDisplayed(localization.Items["captureDeviceNameText"]);
+            ChangeAndWriteLineDisplayed(Localization.Items["captureDeviceNameText"]);
 
             List<string> deviceFriendly = new();
             List<string> userFriendly = new();
@@ -294,7 +326,7 @@ namespace ConfigDomain
                 userFriendly.Add(wasapi.FriendlyName);
             }
             deviceFriendly.Add("exit");
-            userFriendly.Add(localization.Items["cancelText"]);
+            userFriendly.Add(Localization.Items["cancelText"]);
 
             int chosen = ChooseFromList(userFriendly);
             if (deviceFriendly[chosen] == "exit")
@@ -302,12 +334,43 @@ namespace ConfigDomain
                 valueChanged = false;
                 return;
             }
+            
             valueChanged = true;
             config["captureDeviceName"] = deviceFriendly[chosen];
         }
+        static void ChangeLocalizationLanguage()
+        {
+            string toWrite = $"{Localization.Items["localizationLangText"]}\n{Localization.Items["cancelMenuText"]}";
+            ChangeAndWriteLineDisplayed(toWrite);
+
+            string input = Console.ReadLine();
+            if (input.ToLower() == "c")
+            {
+                return;
+            }
+
+            bool changed = Localization.ChangeLocalization(input);
+            if (!changed)
+            {
+                ChangeAndWriteLineDisplayed(Localization.Items["localizationLangFailText"]);
+                Console.ReadLine();
+                return;
+            }
+            
+            config["localizationLang"] = input;
+        }
+        static void ChangeTranscriberLanguage()
+        {
+            ChangeAndWriteLineDisplayed(Localization.Items["transcriberLangText"]);
+
+            List<string> iSOLangs = Localization.AvailableLanguages.Keys.ToList();
+            int chosen = ChooseFromList(iSOLangs);
+
+            config["transcriberLang"] = Localization.ConvertLanguageNameFromISOToTranscriber(iSOLangs[chosen]);
+        }
         static int ChooseInt(out bool valueChanged, int bottomLimiter = 0, int topLimiter = 1_000_000)
         {
-            AddToDisplayed($"\n\n{localization.Items["chooseIntText"]}\n{localization.Items["cancelMenuText"]}");
+            AddToDisplayed($"\n\n{Localization.Items["chooseIntText"]}\n{Localization.Items["cancelMenuText"]}");
 
             int result = bottomLimiter;
             do
@@ -319,12 +382,13 @@ namespace ConfigDomain
                     return 0;
                 }
             } while (result < bottomLimiter || result > topLimiter);
+            
             valueChanged = true;
             return result;
         }
         static float ChooseFloat(out bool valueChanged, float bottomLimiter = 0, float topLimiter = 5)
         {
-            AddToDisplayed($"\n\n{localization.Items["chooseFloatText"]}\n{localization.Items["cancelMenuText"]}");
+            AddToDisplayed($"\n\n{Localization.Items["chooseFloatText"]}\n{Localization.Items["cancelMenuText"]}");
 
             float result = bottomLimiter;
             do
@@ -336,6 +400,7 @@ namespace ConfigDomain
                     return 0;
                 }
             } while (result < bottomLimiter || result > topLimiter);
+            
             valueChanged = true;
             return result;
         }
@@ -357,17 +422,19 @@ namespace ConfigDomain
                     break;
                 }
             }
+            
             valueChanged = true;
             return result;
         }
         static int ChooseFromList(List<string> list)
         {
-            string text = $"\n{localization.Items["chooseText"]}\n";
+            string text = $"\n{Localization.Items["chooseText"]}\n";
             for (int i = 0; i < list.Count; i++)
             {
                 text += ($"\n{i + 1}. {list[i]}");
             }
             AddToDisplayed(text);
+            
             int result;
             while (true)
             {
@@ -382,6 +449,7 @@ namespace ConfigDomain
                 result = chosen - 1;
                 break;
             }
+            
             return result;
         }
         static void AddToDisplayed(string str)

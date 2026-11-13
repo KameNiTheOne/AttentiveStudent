@@ -5,7 +5,8 @@ class TranscribedText(BaseModel):
     def __init__(self, _text: str):
         super().__init__(text=_text)
 
-class Duration(BaseModel):
-    amount: int
-    def __init__(self, amount: int):
-        super().__init__(amount=amount)
+class Information(BaseModel):
+    duration: int
+    language: str
+    def __init__(self, duration: int, language: str):
+        super().__init__(duration=duration, language=language)

@@ -4,6 +4,7 @@ namespace ConfigDomain
 {
     public static class Instruments
     {
+        /// <exception cref="T:System.IO.FileNotFoundException">The file cannot be found.</exception>
         public static T DeserializeObjectFromFile<T>(string pathToFile)
         {
             string stringObject;

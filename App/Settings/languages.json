@@ -1,7 +1,42 @@
 ﻿// Languages recognized by the app. 
-// Pattern: "3LetterISO": "lower case language name, like 'english'".
-// See https://huggingface.co/openai/whisper-large-v3 for all supported languages."
+// Pattern: "3LetterISO": "locale code". ec "eng": "en-US"
+// Transcription-ready (19 locales)	English (en-US, en-GB), Spanish (es-US, es-ES), French (fr-FR, fr-CA), Italian (it-IT), Portuguese (pt-BR, pt-PT), Dutch (nl-NL), German (de-DE), Turkish (tr-TR), Russian (ru-RU), Arabic (ar-AR), Hindi (hi-IN), Japanese (ja-JP), Korean (ko-KR), Vietnamese (vi-VN), Ukrainian (uk-UA)
+// See https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b for all supported languages."
 {
-  "rus": "russian",
-  "eng": "english"
+  "eng": "en-US",
+  "spa": "es-ES",
+  "fre": "fr-FR",
+  "ita": "it-IT",
+  "por": "pt-BR",
+  "dut": "nl-NL",
+  "ger": "de-DE",
+  "tur": "tr-TR",
+  "rus": "ru-RU",
+  "ara": "ar-AR",
+  "hin": "hi-IN",
+  "jpn": "ja-JP",
+  "kor": "ko-KR",
+  "vie": "vi-VN",
+  "ukr": "uk-UA",
+  "pol": "pl-PL",
+  "swe": "sv-SE",
+  "cze": "cs-CZ",
+  "nob": "nb-NO",
+  "dan": "da-DK",
+  "bul": "bg-BG",
+  "fin": "fi-FI",
+  "hrv": "hr-HR",
+  "slo": "sk-SK",
+  "chi": "zh-CN",
+  "hun": "hu-HU",
+  "rum": "ro-RO",
+  "est": "et-EE",
+  "gre": "el-GR",
+  "lit": "lt-LT",
+  "lav": "lv-LV",
+  "mlt": "mt-MT",
+  "slv": "sl-SI",
+  "heb": "he-IL",
+  "tha": "th-TH",
+  "nno": "nn-NO"
 }

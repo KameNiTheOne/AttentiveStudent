@@ -1,9 +1,9 @@
 ﻿{
   //Main UI texts
   "greetingText": "Recording started!",
-  "mainMenu": "Choose what you want to do (enter the corresponding number):\n1: Answer the last question.\n2: Toggle note-taking mode on/off.\n3: Help.\n4: Configure.\n5: Exit.",
+  "mainMenu": "Choose what you want to do (enter the corresponding number):\n1: Answer the last question.\n2: Ask a relevant question.\n3: Toggle note-taking mode on/off.\n4: Help.\n5: Configure.\n\n6: Exit.",
   "takeNotesToggleText": "Is note-taking enabled?",
-  "helpText": "Help:\n1: Transcribes the last audio and sends it to GPT to answer a question from the audio.\n2: Transcribes all audio and saves the result to the Notes folder in the program's directory.\n4: Changes the program settings.",
+  "helpText": "Help:\n1: Transcribes the last audio and sends it to GPT to answer a question from the audio.\n2: The GPT comes up with a relevant question based on a transcription of the last audio.\n3: Transcribes all audio and saves the result to the Notes folder in the program's directory.\n5: Changes the program settings.",
   "exitText": "Exiting the program, please wait...",
   "transcriptMenu": "Transcribing audio, please wait...",
   "gptMenu": "Waiting for response from GPT, please wait...",
@@ -12,6 +12,7 @@
 
   //GPT prompts
   "gptPrompt": "Answer this history question:",
+  "gptQuestionPrompt": "Ask a question based on this information:",
   "gptSystemPrompt": "You are the best historian, specializing in the history of Russia. You always answer briefly and accurately.",
   "gptUserPrompt": "Answer this history question: Vladimir Sviatoslavich was Prince of Novgorod from 970 to 978 and Grand Prince of Kiev from 980 to 1015. Does anyone know what event happened during his reign?",
   "gptAssistantPrompt": "The Baptism of Rus'.",
@@ -32,6 +33,9 @@
   "localExplanation": "Local model.",
   "azureExplanation": "Azure model (online access via API)",
   "captureDeviceNameText": "Select the device that will be used for recording:",
+  "localizationLangText": "Enter localization file name (for example eng, the files are located in the Settings floder).",
+  "localizationLangFailText": "Such localization file does not exist!",
+  "transcriberLangText": "Choose the transcription language.",
   "chooseIntText": "Enter an integer:",
   "chooseFloatText": "Enter a decimal number using a dot:",
   "useNotedAmountText": "Enter the number of last said words that are going to be used for generating an answer using GPT:",

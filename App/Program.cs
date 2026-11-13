@@ -11,8 +11,8 @@ class Program
 
     static async Task Main()
     {
-        Dictionary<string, string> config = Config.Initialize();
-        localization = Config.localization;
+        Dictionary<string, string> config = ConfigDomain.Config.Initialize();
+        localization = ConfigDomain.Config.Localization;
 
         Console.WriteLine("Initializing the GPT...");
         GPTBuilder gptBuilder = new(config, localization.Items);
@@ -35,50 +35,65 @@ class Program
             string inputedKey = Console.ReadKey().Key.ToString();
             switch (inputedKey)
             {
-                case "D1": //Transcribe and send to GPT
-                    string result = await TranscribeAndSendToGPT();
-                    ChangeAndWriteLineDisplayed($"{localization.Items["gptResponseText"]}" +
-                        $"\n\n{result}\n\n" +
-                        $"{localization.Items["mainMenu"]}");
-                    break;
-
-                case "D2": //Enable/Disable note taking mode
-                    captureBackend.TakeNotes = !captureBackend.TakeNotes;
-                    ChangeAndWriteLineDisplayed($"{localization.Items["takeNotesToggleText"]} " +
-                        $"{captureBackend.TakeNotes}.\n\n" +
-                        $"{localization.Items["mainMenu"]}");
-                    break;
-
-                case "D3": //Help
-                    ChangeAndWriteLineDisplayed($"{localization.Items["helpText"]}\n\n" +
-                        $"{localization.Items["mainMenu"]}");
-                    break;
-
-                case "D4": //Run config initialization and then exit the program
-                    Config.Change(out bool restartRequired);
-                    if (restartRequired)
+                case "D1": //Transcribe and send to GPT for answer
+                    {
+                        string result = await TranscribeAndSendToGPT(localization.Items["gptPrompt"]);
+                        ChangeAndWriteLineDisplayed($"{localization.Items["gptResponseText"]}" +
+                            $"\n\n{result}\n\n" +
+                            $"{localization.Items["mainMenu"]}");
+                        break;
+                    }
+                case "D2": //Transcribe and send to GPT for question
+                    {
+                        string result = await TranscribeAndSendToGPT(localization.Items["gptQuestionPrompt"]);
+                        ChangeAndWriteLineDisplayed($"{localization.Items["gptResponseText"]}" +
+                            $"\n\n{result}\n\n" +
+                            $"{localization.Items["mainMenu"]}");
+                        break;
+                    }
+                case "D3": //Enable/Disable transcription mode
+                    {
+                        captureBackend.TakeNotes = !captureBackend.TakeNotes;
+                        ChangeAndWriteLineDisplayed($"{localization.Items["takeNotesToggleText"]} " +
+                            $"{captureBackend.TakeNotes}.\n\n" +
+                            $"{localization.Items["mainMenu"]}");
+                        break;
+                    }
+                case "D4": //Help
+                    {
+                        ChangeAndWriteLineDisplayed($"{localization.Items["helpText"]}\n\n" +
+                            $"{localization.Items["mainMenu"]}");
+                        break;
+                    }
+                case "D5": //Run config initialization and then exit the program
+                    {
+                        ConfigDomain.Config.Change(out bool restartRequired);
+                        if (restartRequired)
+                        {
+                            ChangeAndWriteLineDisplayed($"{localization.Items["exitText"]}\n");
+                            localization.Items["transcriptMenu"] = $"{localization.Items["exitText"]}\n\n{localization.Items["transcriptMenu"]}";
+                            await ExitProgram();
+                            exit = true;
+                        }
+                        else
+                        {
+                            WriteLineDisplayed();
+                        }
+                        break;
+                    }
+                case "D6": //Exit the program
                     {
                         ChangeAndWriteLineDisplayed($"{localization.Items["exitText"]}\n");
                         localization.Items["transcriptMenu"] = $"{localization.Items["exitText"]}\n\n{localization.Items["transcriptMenu"]}";
                         await ExitProgram();
                         exit = true;
+                        break;
                     }
-                    else
+                default:
                     {
                         WriteLineDisplayed();
+                        break;
                     }
-                    break;
-
-                case "D5": //Exit the program
-                    ChangeAndWriteLineDisplayed($"{localization.Items["exitText"]}\n");
-                    localization.Items["transcriptMenu"] = $"{localization.Items["exitText"]}\n\n{localization.Items["transcriptMenu"]}";
-                    await ExitProgram();
-                    exit = true;
-                    break;
-
-                default:
-                    WriteLineDisplayed();
-                    break;
             }
             await Task.Delay(20);
         }
@@ -94,7 +109,7 @@ class Program
             AddToAndWriteLineDisplayed($"\n\n{localization.Items["notificationText"]}");
         }
     }
-    static async Task<string> TranscribeAndSendToGPT()
+    static async Task<string> TranscribeAndSendToGPT(string prompt)
     {
         Task<string> transcriptionTask = captureBackend.StopAndTranscribe(true, CancellationToken.None);
         Task notify = NotifyWhenTaskDone(transcriptionTask);
@@ -103,7 +118,7 @@ class Program
         await notify;
         string transcribed = await transcriptionTask;
 
-        string query = $"{localization.Items["gptPrompt"]} {transcribed}";
+        string query = $"{prompt} {transcribed}";
         Task<string> gptTask = gpt.Query(query, CancellationToken.None);
         notify = NotifyWhenTaskDone(gptTask);
 

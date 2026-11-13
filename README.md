@@ -29,11 +29,11 @@ Exit the app when you are done. (by pressing the dedicated button!!)
 
 1. Go to Settings folder and open the languages.json file
 2. Add your language to the file following the instructions present in the file.
-3. Copy and translate russian.json, save it with the same full name you’d written in the languages.json file (eg. “eng”: “english” -> english.json)
+3. Copy and translate eng.json, save it with the same name you’d written in the languages.json file (eg. “eng”: “en-US” -> eng.json)
 4. Done!
 
 ## Models used
 
 ai-sage/GigaAM-v3: https://huggingface.co/ai-sage/GigaAM-v3
 
-openai/whisper-small: https://huggingface.co/openai/whisper-small
+nvidia/nemotron-3.5-asr: https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b

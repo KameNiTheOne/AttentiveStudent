@@ -19,6 +19,8 @@ namespace CaptureService
         bool captureCtsDisposed = false;
 
         public bool TakeNotes = false;
+
+        string transcriptionLanguage;
         private CaptureBackend() { }
         public static async Task<CaptureBackend> Initialize(Dictionary<string, string> cnfg)
         {
@@ -29,6 +31,7 @@ namespace CaptureService
             Console.WriteLine($"Done initializing the NoteTaker!");
 
             Console.WriteLine("Initializing the transcriber...");
+            instance.transcriptionLanguage = cnfg["transcriberLang"];
             instance.transcriber = await Transcriber.Initialize(cnfg);
             Console.WriteLine($"Done initializing the transcriber!");
 
@@ -76,7 +79,7 @@ namespace CaptureService
         {
             Func<string, int, Task> Transcribe = async (string AFPath, int duration) =>
             {
-                string transcribed = await transcriber.Transcribe(AFPath, duration, CancellationToken.None);
+                string transcribed = await transcriber.Transcribe(AFPath, duration, transcriptionLanguage , CancellationToken.None);
                 noteTaker.TakeNote(transcribed, TakeNotes);
             };
 
@@ -85,12 +88,12 @@ namespace CaptureService
         }
         public async Task<string> StopAndTranscribe(bool continueCapture, CancellationToken ct)
         {
-            await StopListeningAndReturnTranscriptionDuration(continueCapture);
+            await StopListening(continueCapture);
             await asyncTranscription;
 
             return noteTaker.ReadFromBatch();
         }
-        async Task StopListeningAndReturnTranscriptionDuration(bool continueCapture)
+        async Task StopListening(bool continueCapture)
         {
             if (TakeNotes) await asyncTranscription;
             captureCts.Cancel();
@@ -107,7 +110,8 @@ namespace CaptureService
         }
         public override void ChangeHandler(Dictionary<string, string> cnfg)
         {
-            StopListeningAndReturnTranscriptionDuration(true).Wait();
+            transcriptionLanguage = cnfg["transcriberLang"];
+            StopListening(true).Wait();
         }
 
         public override async Task Dispose()

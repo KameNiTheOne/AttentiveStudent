@@ -3,13 +3,16 @@ using System.Net.Http.Headers;
 
 namespace CaptureService.Instruments
 {
-    class Duration
+    class Information
     {
-        [JsonProperty("amount")]
-        public int Amount { get; set; }
-        public Duration(int amount)
+        [JsonProperty("duration")]
+        public int Duration { get; set; }
+        [JsonProperty("language")]
+        public string Language { get; set; }
+        public Information(int duration, string language)
         {
-            Amount = amount;
+            Duration = duration;
+            Language = language;
         }
     }
     public class HttpRetriever
@@ -19,34 +22,36 @@ namespace CaptureService.Instruments
         {
             client = new HttpClient() { Timeout = TimeSpan.FromSeconds(600) };
         }
-        MultipartFormDataContent PrepareMultipartFormContent(string filePath, string fileName)
+        MultipartFormDataContent PrepareAudiofile(string filePath)
         {
             var multipartFormContent = new MultipartFormDataContent();
             byte[] fileToBytes = File.ReadAllBytes(filePath);
+            File.Delete(filePath);
+
             var content = new ByteArrayContent(fileToBytes);
 
             content.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");
-            multipartFormContent.Add(content, name: "audiofile", fileName: fileName);
+            multipartFormContent.Add(content, name: "audiofile", fileName: "audio.mp3");
 
             return multipartFormContent;
         }
-        async Task PostDuration(string http, int amount, CancellationToken ct)
+        async Task PostInformation(string http, int duration, string language, CancellationToken ct)
         {
-            using var jsonContent = new StringContent(JsonConvert.SerializeObject(new Duration(amount)));
+            using var jsonContent = new StringContent(JsonConvert.SerializeObject(new Information(duration, language)));
             jsonContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
             try
             {
-                using var response = await client.PostAsync($"{http}/sendduration/", jsonContent, ct);
+                using var response = await client.PostAsync($"{http}/sendinformation/", jsonContent, ct);
                 _ = await response.Content.ReadAsStringAsync(ct);
             }
             catch (TaskCanceledException) { }
         }
-        public async Task<string> PostAudiofileAsync(string http, string filePath, int duration, CancellationToken ct)
+        public async Task<string> PostAudiofileAsync(string http, string filePath, int duration, string language, CancellationToken ct)
         {
-            await PostDuration(http, duration, ct);
+            await PostInformation(http, duration, language, ct);
 
-            using var multipartFormContent = PrepareMultipartFormContent(filePath, "audio.mp3");
+            using var multipartFormContent = PrepareAudiofile(filePath);
 
             string result;
             try

@@ -26,16 +26,15 @@ namespace CaptureService.Services
             instance.port = await instance.InitializeContainer(Path.Combine(cnfg["pathToExeFolder"], "Transcriber"));
             return instance;
         }
-        public async Task<string> Transcribe(string pathToTempFile, int duration, CancellationToken ct)
+        public async Task<string> Transcribe(string pathToTempFile, int duration, string language, CancellationToken ct)
         {
-            string postResult = await http.PostAudiofileAsync($"http://localhost:{port}", pathToTempFile, duration, ct);
-            File.Delete(pathToTempFile);
+            string postResult = await http.PostAudiofileAsync($"http://localhost:{port}", pathToTempFile, duration, language, ct);
             return DeserializeTranscribed(postResult).Value;
         }
         Transcribed DeserializeTranscribed(string jsonObj)
         {
             Transcribed transcribed;
-            if (jsonObj == "\"\"")
+            if (jsonObj == "\"\"" || jsonObj == "{\"text\":\" \"}")
             {
                 transcribed = new Transcribed("");
             }

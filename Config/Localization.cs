@@ -1,46 +1,84 @@
-﻿using System.Globalization;
+﻿using ConfigChangeReactor;
+using System.Globalization;
 namespace ConfigDomain
 {
     public class Localization
     {
+
         public Dictionary<string, string> Items;
-        public Localization(string pathToExeFolder)
+        public string TranscriberLanguage { get; private set; }
+        public string Language { get; private set; }
+        public Dictionary<string, string> AvailableLanguages { get; private set; }
+
+        string defaultISOLanguage = "eng";
+        string pathToLocalizationFolder;
+        public Localization(string pathToExeFolder, string localizationLanguage = "", string transcriberLanguage = "")
         {
-            string ISOLanguage = CultureInfo.InstalledUICulture.ThreeLetterISOLanguageName;
+            if (localizationLanguage == "")
+            {
+                Language = CultureInfo.InstalledUICulture.ThreeLetterISOLanguageName;
+            }
+            else
+            {
+                Language = localizationLanguage;
+            }
 
-            string pathToConfigFolder = Path.Combine(pathToExeFolder, "Settings");
-            string pathToLanguages = Path.Combine(pathToConfigFolder, "languages.json");
-            string language = ConvertLanguageNameFromISOToTranscriber(ISOLanguage, pathToLanguages);
-            Items = GetLocalization(pathToConfigFolder, language);
+            pathToLocalizationFolder = Path.Combine(pathToExeFolder, "Settings");
+            string pathToLanguages = Path.Combine(pathToLocalizationFolder, "languages.json");
+            AvailableLanguages = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLanguages);
+            AvailableLanguages["auto"] = "auto";
 
-            string pathToTranscriberFolder = Path.Combine(pathToExeFolder, "Transcriber");
-            string pathToApp = Path.Combine(pathToTranscriberFolder, "app");
-            string pathToLanguageFile = Path.Combine(pathToApp, "language.txt");
-            CreateTransciberLanguageFile(pathToLanguageFile, language);
+            if (transcriberLanguage == "")
+            {
+                TranscriberLanguage = ConvertLanguageNameFromISOToTranscriber(Language);
+            }
+            else
+            {
+                TranscriberLanguage = transcriberLanguage;
+            }
+
+            Items = getLocalization(Language, out bool localizationForISOExists);
+
+            if (localizationForISOExists)
+            {
+                defaultISOLanguage = Language;
+            }
         }
-        string ConvertLanguageNameFromISOToTranscriber(string ISOLanguage, string pathToLanguages)
+        public string ConvertLanguageNameFromISOToTranscriber(string language)
         {
-            var languages = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLanguages);
-            if (languages.TryGetValue(ISOLanguage, out string value))
+            if (AvailableLanguages.TryGetValue(language, out string value))
             {
                 return value;
             }
-            return "english";
+            return "auto";
         }
-        Dictionary<string, string> GetLocalization(string pathToLocalizationFolder, string language)
+        Dictionary<string, string> getLocalization(string language, out bool localizationForISOExists)
         {
+            localizationForISOExists = true;
             string pathToLocalization = Path.Combine(pathToLocalizationFolder, $"{language}.json");
-            return Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLocalization);
-        }
-        void CreateTransciberLanguageFile(string path, string language)
-        {
-            using (var stream = File.Open(path, FileMode.Create))
+            string pathToDefaultLocalization = Path.Combine(pathToLocalizationFolder, $"{defaultISOLanguage}.json");
+
+            Dictionary<string, string> items;
+            try
             {
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.Write(language);
-                }
+                items = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToLocalization);
             }
+            catch (FileNotFoundException)
+            {
+                items = Instruments.DeserializeObjectFromFile<Dictionary<string, string>>(pathToDefaultLocalization);
+                localizationForISOExists = false;
+            }
+            return items;
+        }
+        public bool ChangeLocalization(string localizationLanguage)
+        {
+            Items = getLocalization(localizationLanguage, out bool localizationForISOExists);
+            if (localizationForISOExists)
+            {
+                Language = localizationLanguage;
+            }
+
+            return localizationForISOExists;
         }
     }
 }

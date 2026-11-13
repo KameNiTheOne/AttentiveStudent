@@ -15,14 +15,7 @@ RUN conda install --quiet --freeze-installed -c main conda-pack && \
     conda run -n program pip install --no-cache-dir numpy==2.* torch==2.8.* torchaudio==2.8.* transformers==4.57.* pyannote.audio==4.0 torchcodec==0.7 hydra-core==1.3.* omegaconf==2.3.* sentencepiece tqdm && \
     conda run -n program conda install conda-forge::fastapi && \
     conda run -n program pip install --force-reinstall numpy && \
-    conda run -n program conda install ffmpeg -c conda-forge
+    conda run -n program conda install -y -c conda-forge "ffmpeg=7.*"
 
 # Use conda run to execute uvicorn in the program environment
 CMD ["conda", "run", "--no-capture-output", "-n", "program", "uvicorn", "program:app", "--app-dir", "app", "--host", "0.0.0.0", "--port", "8000"]
-
-# curl -X POST -F "audiofile=@C:/codes/temp/test.mp3" http://localhost:1779/transcribe/
-# uvicorn program:app --app-dir app --host 0.0.0.0 --port 1779
-
-#to run docker container
-#docker build -t transcribertest .
-#C:\codes\thing>docker run --name=transcriber -p 1779:8000 transcribertest
